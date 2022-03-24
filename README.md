@@ -30,8 +30,7 @@ you change them.
   - run `npm run build`
   - run `npm run webserver`
 - Go to the game
-  - `wget http://localhost:9182/bin/utils/initRepo.js
-    /bin/utils/initRepo.js`
+  - `wget http://localhost:9182/bin/utils/initRepo.js /bin/utils/initRepo.js`
   - `run /bin/utils/initRepo.js`
   - `run /bin/sayHelloTs.js`
 
@@ -84,25 +83,25 @@ A short description of the most important parts of the template.
 - `webserver`: runs the tiny webserver that will serve your scripts so
   that you can `wget` them from the game.
   - Careful with the server, CORS are activated, so do not serve any
-  sensitive data! You never know~
+    sensitive data! You never know~
 
 ## TypeScript compiler configuration (`tsconfig.json`)
 
 ```json
 {
-	"compilerOptions": {
-		"target": "ES2021",
-		"module": "ES2020",
-		"rootDir": "src/",
-		"baseUrl": "src/",
-		"paths": {
-			"/lib/*": [ "lib/*" ]
-		},
-		"outDir": "build/",
-		"moduleResolution": "node",
-		"strictNullChecks": true,
-		"strictPropertyInitialization": true
-	}
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "ES2020",
+    "rootDir": "src/",
+    "baseUrl": "src/",
+    "paths": {
+      "/lib/*": ["lib/*"]
+    },
+    "outDir": "build/",
+    "moduleResolution": "node",
+    "strictNullChecks": true,
+    "strictPropertyInitialization": true
+  }
 }
 ```
 
@@ -182,7 +181,7 @@ their absolute version. **If you want to add more than just the
 Always check that your IDE / tools don't import modules like this:
 
 ```typescript
-import { Blep } from "../lib/Blep";
+import { Blep } from "../lib/Blep"
 ```
 
 BitBurner doesn't understand relative path, so even though this will
@@ -190,13 +189,13 @@ compile fine, it will not run in-game. Make sure they look like this
 instead (absolute path, c.f previous paragraph):
 
 ```typescript
-import { Blep } from "/lib/Blep";
+import { Blep } from "/lib/Blep"
 ```
 
 This would result in this javascript:
 
 ```js
-import { Blep } from "/lib/Blep";
+import { Blep } from "/lib/Blep"
 ```
 
 which is valid for the game.
