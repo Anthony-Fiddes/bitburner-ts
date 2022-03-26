@@ -4180,7 +4180,17 @@ declare module "Bitburner" {
      *
      * @param msg - Value to be printed.
      */
-    print(msg: any): void
+    print(...msg: any[]): void
+
+    /** Prints a formatted string to the script’s logs.
+		@remarks RAM cost: 0 GB
+			
+		see: https://github.com/alexei/sprintf.js
+		
+		@param format format of the message
+		@param args Value(s) to be printed. 
+	**/
+    printf(format: string, ...args: any[]): void
 
     /**
      * Prints a value or a variable to the Terminal.
