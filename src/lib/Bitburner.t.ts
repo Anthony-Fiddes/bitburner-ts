@@ -4623,6 +4623,20 @@ declare module "Bitburner" {
     ): Promise<boolean>
 
     /**
+     * Copy file between servers.
+     * @remarks
+     * RAM cost: 0.6 GB
+     *
+     * Copies a script or literature (.lit) file(s) to another server. The files argument can be either a string
+     * specifying a single file to copy, or an array of strings specifying multiple files to copy.
+     *
+     * @param files - Filename or an array of filenames of script/literature files to copy.
+     * @param destination - Host of the destination server, which is the server to which the file will be copied.
+     * @returns True if the script/literature file is successfully copied over and false otherwise. If the files argument is an array then this function will return true if at least one of the files in the array is successfully copied.
+     */
+    scp(files: string | string[], destination: string): Promise<boolean>
+
+    /**
      * List files on a server.
      * @remarks
      * RAM cost: 0.2 GB
