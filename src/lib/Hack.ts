@@ -247,8 +247,7 @@ export function getServerConnectString(ns: NS, end: string, start?: string) {
   }
   const serverPath: string[] = []
   const nodes = getServerNodes(ns, end)
-  const byHostname = (hostname: string) => (n: node) => n.hostname === hostname
-  let curr = nodes.find(byHostname(end))
+  let curr = nodes.find((n: node) => n.hostname === end)
   if (curr === undefined) {
     logger.printf(ns, "cannot find path to %s", end)
     return ""
@@ -259,7 +258,7 @@ export function getServerConnectString(ns: NS, end: string, start?: string) {
     if (curr.prev?.hostname === undefined) {
       break
     }
-    curr = nodes.find(byHostname(curr.prev.hostname))
+    curr = curr.prev
     if (count === 100) {
       ns.tprint("did not find connection string after 100 loops")
       return ""

@@ -1,7 +1,6 @@
 import { NS } from "Bitburner"
-import { isFolder, rm } from "/lib/Path"
+import { rm } from "/lib/Path"
 
-/** @param {NS} ns **/
 export async function main(ns: NS) {
   let targets: string[] = ns.args.map((t) => t.toString())
   if (targets.length < 1) {
