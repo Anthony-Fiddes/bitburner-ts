@@ -72,6 +72,18 @@ export function buyUpgrades(ns: NS, minBalance: number) {
   }
 }
 
+function getBitNodeMultiplier(ns: NS) {
+  let bnMults = 1
+  try {
+    bnMults = ns.getBitNodeMultipliers().HacknetNodeMoney
+  } catch (error) {
+    logger.print(ns, "ERROR could not get bitnode hacknet multipliers: ", error)
+    logger.print(ns, "Defaulting to 1")
+    logger.print(ns, "Do you have the required source file?")
+  }
+  return bnMults
+}
+
 /** @returns true if node was successfully purchased **/
 function purchaseNode(ns: NS): boolean {
   let node = ns.hacknet.purchaseNode()
@@ -151,31 +163,32 @@ class UpgradeOption {
           return ns.hacknet.getPurchaseNodeCost()
       }
     }
+    const mults = ns.getHacknetMultipliers()
     switch (this.type) {
       case Type.RAM:
         return ns.formulas.hacknetNodes.ramUpgradeCost(
           this.#getNodeStats(ns).ram,
+          1,
+          mults.ramCost,
         )
       case Type.Level:
         return ns.formulas.hacknetNodes.levelUpgradeCost(
           this.#getNodeStats(ns).level,
+          1,
+          mults.levelCost,
         )
       case Type.Core:
         return ns.formulas.hacknetNodes.coreUpgradeCost(
           this.#getNodeStats(ns).cores,
+          1,
+          mults.coreCost,
         )
       case Type.New:
-        const purchaseMult = ns.getHacknetMultipliers().purchaseCost
-        return ns.formulas.hacknetNodes.hacknetNodeCost(this.node, purchaseMult)
+        return ns.formulas.hacknetNodes.hacknetNodeCost(
+          this.node,
+          mults.purchaseCost,
+        )
     }
-  }
-
-  #getMoneyGainRate(ns: NS) {
-    return ns.formulas.hacknetNodes.moneyGainRate(
-      this.#getNodeStats(ns).level,
-      this.#getNodeStats(ns).ram,
-      this.#getNodeStats(ns).cores,
-    )
   }
 
   getValue(ns: NS): number {
@@ -187,16 +200,25 @@ class UpgradeOption {
       )
       return 0
     }
-    // TODO: how do I tell if this errored?
     let prodGain = 0
+    /** currentGain is a function because running it for the new option would error **/
+    const currentGain = () => {
+      return ns.formulas.hacknetNodes.moneyGainRate(
+        this.#getNodeStats(ns).level,
+        this.#getNodeStats(ns).ram,
+        this.#getNodeStats(ns).cores,
+        ns.getHacknetMultipliers().production,
+      )
+    }
     switch (this.type) {
       case Type.RAM:
         prodGain =
           ns.formulas.hacknetNodes.moneyGainRate(
             this.#getNodeStats(ns).level,
-            this.#getNodeStats(ns).ram + 1,
+            this.#getNodeStats(ns).ram * 2,
             this.#getNodeStats(ns).cores,
-          ) - this.#getMoneyGainRate(ns)
+            ns.getHacknetMultipliers().production,
+          ) - currentGain()
         break
       case Type.Level:
         prodGain =
@@ -204,7 +226,8 @@ class UpgradeOption {
             this.#getNodeStats(ns).level + 1,
             this.#getNodeStats(ns).ram,
             this.#getNodeStats(ns).cores,
-          ) - this.#getMoneyGainRate(ns)
+            ns.getHacknetMultipliers().production,
+          ) - currentGain()
         break
       case Type.Core:
         prodGain =
@@ -212,12 +235,21 @@ class UpgradeOption {
             this.#getNodeStats(ns).level,
             this.#getNodeStats(ns).ram,
             this.#getNodeStats(ns).cores + 1,
-          ) - this.#getMoneyGainRate(ns)
+            ns.getHacknetMultipliers().production,
+          ) - currentGain()
         break
       case Type.New:
-        prodGain = ns.formulas.hacknetNodes.moneyGainRate(1, 1, 1)
+        prodGain = ns.formulas.hacknetNodes.moneyGainRate(
+          1,
+          1,
+          1,
+          ns.getHacknetMultipliers().production,
+        )
         break
     }
+    logger.print(ns, this.toString())
+    logger.print(ns, "prod gain: ", prodGain)
+    logger.print(ns, "cost: ", this.getUpgradeCost(ns))
     return prodGain / this.getUpgradeCost(ns)
   }
 }
