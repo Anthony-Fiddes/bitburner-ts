@@ -10,21 +10,26 @@ export const WEAKEN = "/forever/weaken.js"
 
 export class Distributor {
   /**
+   * how long each rebalance should last
+   */
+  rebalanceDuration = 1000 * 60 * 60 * 3
+  rebalanceTime = Date.now() + this.rebalanceDuration
+  /**
    * A set of servers that may be targeted.
    * They will be checked for root privilege
    */
-  targets!: Set<string>
+  targets: Set<string>
   /**
    * A set of servers that may run scripts.
    * They will be checked for root privilege
    */
-  workers!: Set<string>
+  workers: Set<string>
   /**
    * the number of threads allocated to each target server
    * @todo consider using the Map<string, number> type instead
    */
   threads: { [key: string]: number } = {}
-  ns!: NS
+  ns: NS
   ratios = {
     hack: 1,
     grow: 11,
@@ -40,7 +45,7 @@ export class Distributor {
    * My ideal solution would be to batch all of the threads and execute
    * them AFTER calculating where they should go instead of during.
    */
-  maxThreadsPerTarget = 500
+  maxThreadsPerTarget = 50
   growthRate = 100
   staggerTime = 10
 
@@ -48,6 +53,10 @@ export class Distributor {
     this.targets = targets
     this.workers = workers
     this.ns = ns
+    this.#killallWorkers()
+  }
+
+  #killallWorkers() {
     for (const server of this.workers) {
       if (server != "home") {
         this.ns.killall(server)
@@ -77,10 +86,19 @@ export class Distributor {
    * calls to all of a Distributor's servers
    **/
   async share() {
+    // rebalance if needed
+    if (Date.now() > this.rebalanceTime) {
+      this.ns.print("Rebalancing distributor:")
+      this.#killallWorkers()
+      this.maxThreadsPerTarget *= 1.2
+      this.rebalanceTime = Date.now() + this.rebalanceDuration
+    }
+
     for (const server of this.workers) {
       await this.#gobble(server)
     }
     this.ns.print("Distributor threads: ", this.threads)
+    return
   }
 
   async #gobble(server: string) {
@@ -195,13 +213,13 @@ export class Distributor {
   }
 }
 
-type node = { prev: node | null; hostname: string }
+type node = { prev?: node; hostname: string }
 
 /**
  * @param stop the server to stop the search at
  */
 function getServerNodes(ns: NS, stop?: string) {
-  let search: node[] = [{ prev: null, hostname: "home" }]
+  let search: node[] = [{ hostname: "home" }]
   const servers: node[] = []
   const explored: Set<string> = new Set()
   while (search.length > 0) {
