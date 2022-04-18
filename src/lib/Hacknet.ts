@@ -26,6 +26,7 @@ function formulasExists(ns: NS) {
  *  cost to greatest cost.
  *  minBalance stop buying upgrades when the player
  *  balance would fall below minBalance.
+ *  TODO: consider adding an error return
  **/
 export function buyUpgrades(ns: NS, minBalance: number) {
   if (minBalance < 0) {
@@ -70,18 +71,6 @@ export function buyUpgrades(ns: NS, minBalance: number) {
       logger.print(ns, opt.toString())
     }
   }
-}
-
-function getBitNodeMultiplier(ns: NS) {
-  let bnMults = 1
-  try {
-    bnMults = ns.getBitNodeMultipliers().HacknetNodeMoney
-  } catch (error) {
-    logger.print(ns, "ERROR could not get bitnode hacknet multipliers: ", error)
-    logger.print(ns, "Defaulting to 1")
-    logger.print(ns, "Do you have the required source file?")
-  }
-  return bnMults
 }
 
 /** @returns true if node was successfully purchased **/
@@ -247,9 +236,6 @@ class UpgradeOption {
         )
         break
     }
-    logger.print(ns, this.toString())
-    logger.print(ns, "prod gain: ", prodGain)
-    logger.print(ns, "cost: ", this.getUpgradeCost(ns))
     return prodGain / this.getUpgradeCost(ns)
   }
 }

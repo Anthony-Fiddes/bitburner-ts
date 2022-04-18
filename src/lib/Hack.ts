@@ -33,7 +33,7 @@ export class Distributor {
   ratios = {
     hack: 1,
     grow: 11,
-    weaken: 6,
+    weaken: 8,
   }
   currentRatios = { ...this.ratios }
   /**

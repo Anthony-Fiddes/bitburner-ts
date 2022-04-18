@@ -2,17 +2,9 @@ import { NS } from "Bitburner"
 import { buyUpgrades, getProduction } from "lib/Hacknet"
 import { Distributor, getServers } from "lib/Hack"
 
-function handleHacknet(ns: NS, step: number) {
-  // TODO: make this accumulate hacknet money if it wasn't spent
-  // roughly use hacknet money for hacknet upgrades
-  // const produced = (getProduction(ns) * step) / seconds(1)
-  // TODO: Add seed money from hacking. Maybe also do a portion of hacking
-  // income
-  const minBal = ns.getServerMoneyAvailable("home") - 1e7
-  buyUpgrades(ns, minBal)
-}
-
 async function handleDistributor(dist: Distributor) {
+  dist.setWorkers(getWorkers(dist.ns))
+  dist.setTargets(getServers(dist.ns))
   await dist.share()
 }
 
@@ -27,6 +19,8 @@ function seconds(num: number) {
 export class Controller {
   ns: NS
   dist: Distributor
+  minBalance = 0
+  peakBalance = 0
   step = seconds(10)
 
   constructor(ns: NS) {
@@ -36,9 +30,21 @@ export class Controller {
 
   async run() {
     while (true) {
+      this.updateBalanceInfo()
       await handleDistributor(this.dist)
-      handleHacknet(this.ns, this.step)
+      buyUpgrades(this.ns, this.minBalance)
       await this.ns.sleep(this.step)
+    }
+  }
+
+  /** Ensures that we keep a min balance that is 30% of the highest balance
+   *  we've ever attained. This reserve is useful for manually purchasing upgrades.
+   */
+  updateBalanceInfo() {
+    const moneyAvailable = this.ns.getServerMoneyAvailable("home")
+    if (moneyAvailable > this.peakBalance) {
+      this.peakBalance = moneyAvailable
+      this.minBalance = this.peakBalance * 0.3
     }
   }
 }
