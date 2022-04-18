@@ -1,11 +1,21 @@
 import { NS } from "Bitburner"
-import { buyUpgrades, getProduction } from "lib/Hacknet"
-import { Distributor, getServers } from "lib/Hack"
+import { buyHacknetUpgrades, getHacknetProduction } from "lib/Hacknet"
+import { Distributor, getServers  } from "lib/Hack"
 
 async function handleDistributor(dist: Distributor) {
   dist.setWorkers(getWorkers(dist.ns))
   dist.setTargets(getServers(dist.ns))
   await dist.share()
+}
+
+function handleHacknet(ns: NS, minBalance: number) {
+  const hacknetProd = getHacknetProduction(ns)
+  const hackProd = ns.getScriptIncome()[0]
+  const hackFactor = 10
+  if (hackProd/hacknetProd > hackFactor) {
+    return
+  }
+  buyHacknetUpgrades(ns, minBalance)
 }
 
 function getWorkers(ns: NS) {
@@ -32,7 +42,7 @@ export class Controller {
     while (true) {
       this.updateBalanceInfo()
       await handleDistributor(this.dist)
-      buyUpgrades(this.ns, this.minBalance)
+      handleHacknet(this.ns, this.minBalance)
       await this.ns.sleep(this.step)
     }
   }
