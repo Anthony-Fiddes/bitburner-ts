@@ -4,7 +4,7 @@ import Logger from "lib/Logger"
 const logger = new Logger("hacknet.js")
 
 /** Call func for every node in our hacknet. **/
-export function forEachNode(ns: NS, func: (index: number) => void) {
+export function forEachHacknetNode(ns: NS, func: (index: number) => void) {
   const numNodes = ns.hacknet.numNodes()
   for (let i = 0; i < numNodes; i++) {
     func(i)
@@ -12,9 +12,9 @@ export function forEachNode(ns: NS, func: (index: number) => void) {
 }
 
 /** Get our hacknets' current money generated per second. **/
-export function getProduction(ns: NS) {
+export function getHacknetProduction(ns: NS) {
   let total = 0
-  forEachNode(ns, (i) => (total += ns.hacknet.getNodeStats(i).production))
+  forEachHacknetNode(ns, (i) => (total += ns.hacknet.getNodeStats(i).production))
   return total
 }
 
@@ -28,7 +28,7 @@ function formulasExists(ns: NS) {
  *  balance would fall below minBalance.
  *  TODO: consider adding an error return
  **/
-export function buyUpgrades(ns: NS, minBalance: number) {
+export function buyHacknetUpgrades(ns: NS, minBalance: number) {
   if (minBalance < 0) {
     minBalance = 0
   }
@@ -87,7 +87,7 @@ function purchaseNode(ns: NS): boolean {
 function getOptions(ns: NS) {
   let options: UpgradeOption[] = []
   options.push(new UpgradeOption(Type.New, ns.hacknet.numNodes()))
-  forEachNode(ns, (i) => {
+  forEachHacknetNode(ns, (i) => {
     options.push(new UpgradeOption(Type.RAM, i))
     options.push(new UpgradeOption(Type.Level, i))
     options.push(new UpgradeOption(Type.Core, i))
