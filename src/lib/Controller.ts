@@ -1,6 +1,6 @@
 import { NS } from "Bitburner"
 import { buyHacknetUpgrades, getHacknetProduction } from "lib/Hacknet"
-import { Distributor, getServers, hasSourceFile } from "lib/Hack"
+import { Distributor, getServers, goto, hasSourceFile } from "lib/Hack"
 
 async function handleDistributor(dist: Distributor) {
   dist.setWorkers(getWorkers(dist.ns))
@@ -18,7 +18,7 @@ function handleHacknet(ns: NS, minBalance: number) {
   buyHacknetUpgrades(ns, minBalance)
 }
 
-function handleSingularity(ns: NS) {
+async function handleSingularity(ns: NS) {
   interface MoneyOption {
     GetMoneyPerSecond(): number
     Do(): void
@@ -35,7 +35,8 @@ function handleSingularity(ns: NS) {
     let programs = ns.singularity.getDarkwebPrograms()
     const cost = ns.singularity.getDarkwebProgramCost
     programs = programs.filter((prog) => !ns.fileExists(prog, "home"))
-    programs.sort((a, b) => cost(a) - cost(b))
+    // sort from highest to lowest since pop takes from the back
+    programs.sort((a, b) => cost(b) - cost(a))
     let prog: string | undefined = programs.pop()
     while (prog !== undefined) {
       if (!ns.singularity.purchaseProgram(prog)) {
@@ -45,6 +46,25 @@ function handleSingularity(ns: NS) {
     }
   } else {
     ns.singularity.purchaseTor()
+  }
+
+  const factionServers = ["CSEC", "avmnite-02h", "I.I.I.I", "run4theh111z"]
+  const currentServer = ns.getHostname()
+  const invites = ns.singularity.checkFactionInvitations()
+  for (const hostname of factionServers) {
+    const serv = ns.getServer(hostname)
+    // attempt to join these key factions
+    const faction = serv.organizationName
+    if (invites.find((f) => f === faction)) {
+      ns.singularity.joinFaction(faction)
+    }
+    // controller does not handle getting admin rights
+    if (serv.backdoorInstalled || !serv.hasAdminRights) {
+      continue
+    }
+    goto(ns, hostname)
+    await ns.singularity.installBackdoor()
+    goto(ns, currentServer)
   }
 
   class Crime implements MoneyOption {
@@ -126,7 +146,7 @@ export class Controller {
   async run() {
     while (true) {
       this.updateBalanceInfo()
-      handleSingularity(this.ns)
+      await handleSingularity(this.ns)
       await handleDistributor(this.dist)
       handleHacknet(this.ns, this.minBalance)
       await this.ns.sleep(this.step)

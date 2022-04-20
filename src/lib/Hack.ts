@@ -296,12 +296,30 @@ export function getServerConnectString(ns: NS, end: string, start?: string) {
   return result
 }
 
+/**
+ * @ returns true if the user arrived at their destination, otherwise false.
+ */
 export function goto(ns: NS, end: string) {
-  let connectString = getServerConnectString(ns, end)
-  connectString = connectString.replace("connect", "")
+  if (!hasSourceFile(ns, 4) && ns.getPlayer().bitNodeN != 4) {
+    return false
+  }
+
+  let connectString = getServerConnectString(
+    ns,
+    end,
+    ns.singularity.getCurrentServer(),
+  )
+  connectString = connectString.replaceAll("connect", "")
   const s = connectString.split(";").filter((str) => str !== "")
   const servers = s.map((hostname) => hostname.trim())
-  throw "not implemented man"
+  for (const hostname of servers) {
+    ns.singularity.connect(hostname)
+  }
+
+  if (ns.singularity.getCurrentServer() === end) {
+    return true
+  }
+  return false
 }
 
 /**

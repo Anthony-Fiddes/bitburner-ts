@@ -1,5 +1,5 @@
 import { NS } from "Bitburner"
-import { getServerConnectString } from "/lib/Hack"
+import { getServerConnectString, goto } from "/lib/Hack"
 
 export async function main(ns: NS) {
   if (ns.args.length !== 1) {
@@ -9,6 +9,9 @@ export async function main(ns: NS) {
     )
   }
   const target = ns.args[0].toString()
+  if (goto(ns, target)) {
+    return
+  }
   const connectString = getServerConnectString(ns, target, ns.getHostname())
   if (connectString === "") {
     ns.tprint(`Could not find a path to ${target}. Maybe check the logs?`)
