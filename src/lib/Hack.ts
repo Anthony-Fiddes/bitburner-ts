@@ -1,4 +1,4 @@
-import { NS } from "Bitburner"
+import { NS, SourceFileLvl } from "Bitburner"
 import Logger from "lib/Logger"
 
 const logger = new Logger("hack.js")
@@ -84,7 +84,7 @@ export class Distributor {
   /**
    * Share distributes hack(), weaken() and grow()
    * calls to all of a Distributor's servers
-   **/
+   */
   async share() {
     // rebalance if needed
     if (Date.now() > this.rebalanceTime) {
@@ -110,7 +110,8 @@ export class Distributor {
       this.ns.getServerMaxRam(server) - this.ns.getServerUsedRam(server)
     if (server == "home") {
       // leave home some ram
-      availableRAM -= 10
+      const extraRAM = 36
+      availableRAM -= extraRAM
     }
     let hacks = 0
     const hackRAM = this.ns.getScriptRam(HACK)
@@ -213,6 +214,15 @@ export class Distributor {
   }
 }
 
+/**
+ *  @returns servers that we can connect to
+ */
+export function getServers(ns: NS): Set<string> {
+  const servers = new Set<string>()
+  getServerNodes(ns).forEach((n) => servers.add(n.hostname))
+  return servers
+}
+
 type node = { prev?: node; hostname: string }
 
 /**
@@ -243,15 +253,6 @@ function getServerNodes(ns: NS, stop?: string) {
     search = search.concat(nextServers)
     explored.add(curr.hostname)
   }
-  return servers
-}
-
-/**
- *  @returns servers that we can connect to
- */
-export function getServers(ns: NS): Set<string> {
-  const servers = new Set<string>()
-  getServerNodes(ns).forEach((n) => servers.add(n.hostname))
   return servers
 }
 
@@ -295,11 +296,19 @@ export function getServerConnectString(ns: NS, end: string, start?: string) {
   return result
 }
 
+export function goto(ns: NS, end: string) {
+  let connectString = getServerConnectString(ns, end)
+  connectString = connectString.replace("connect", "")
+  const s = connectString.split(";").filter((str) => str !== "")
+  const servers = s.map((hostname) => hostname.trim())
+  throw "not implemented man"
+}
+
 /**
  * Attempts to get root access on the given @hostname
  * @returns true if nuke was successfully started,
  * otherwise false
- **/
+ */
 export function attemptRoot(ns: NS, hostname: string): boolean {
   if (!canGetRoot(ns, hostname)) {
     return false
@@ -336,7 +345,7 @@ export function attemptRoot(ns: NS, hostname: string): boolean {
  * @param hostname
  * @returns true if it is possible to get root access
  * on a machine, otherwise false
- * **/
+ */
 function canGetRoot(ns: NS, hostname: string): boolean {
   let securityLevel
   try {
@@ -352,7 +361,7 @@ function canGetRoot(ns: NS, hostname: string): boolean {
  * Copy a script to the server hostname and run it.
  * @returns true if the script was successfully started, otherwise
  * false
- **/
+ */
 export async function exec(
   ns: NS,
   script: string,
@@ -391,7 +400,7 @@ export async function exec(
  * server's RAM.
  * @returns true if the script was successfully started, otherwise
  * false
- **/
+ */
 export async function gobble(
   ns: NS,
   script: string,
@@ -406,4 +415,17 @@ export async function gobble(
     return false
   }
   return exec(ns, script, hostname, numThreads, ...args)
+}
+
+/**
+ * @returns true if the player has the given source file
+ */
+export function hasSourceFile(ns: NS, num: number) {
+  const sourceFile = ns
+    .getOwnedSourceFiles()
+    .find((sf: SourceFileLvl) => sf.n == num && sf.lvl > 0)
+  if (sourceFile === undefined) {
+    return false
+  }
+  return true
 }
