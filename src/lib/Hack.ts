@@ -376,6 +376,44 @@ function canGetRoot(ns: NS, hostname: string): boolean {
 }
 
 /**
+ * Run a script and wait for it to finish.
+ * @returns true if the script was run successfully, otherwise
+ * false
+ */
+export async function execWait(
+  ns: NS,
+  script: string,
+  numThreads: number,
+  ...args: string[]
+) {
+  const hostname = ns.getHostname()
+  let pid = ns.run(script, numThreads, ...args)
+  if (pid == 0) {
+    logger.printf(
+      ns,
+      "failed to start %s on %s with %d threads: ns.exec",
+      script,
+      hostname,
+      numThreads,
+    )
+    logger.print(ns, "do you have root?")
+    return false
+  }
+  while (ns.isRunning(pid, hostname, ...args)) {
+    await ns.sleep(10)
+    // TODO: consider adding a timeout?
+  }
+  logger.printf(
+    ns,
+    "successfully run %s on %s with %d threads",
+    script,
+    hostname,
+    numThreads,
+  )
+  return true
+}
+
+/**
  * Copy a script to the server hostname and run it.
  * @returns true if the script was successfully started, otherwise
  * false
