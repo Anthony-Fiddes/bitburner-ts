@@ -1,5 +1,5 @@
 import { NS } from "Bitburner"
-import { goto, hasSourceFile } from "/lib/Hack"
+import { execWait, goto, hasSourceFile } from "/lib/Hack"
 
 interface MoneyOption {
   GetMoneyPerSecond(): number
@@ -35,42 +35,8 @@ export async function main(ns: NS) {
     return
   }
 
-  // Buy the Tor router, get the port openers as soon as we can
-  if (ns.getPlayer().tor) {
-    let programs = ns.singularity.getDarkwebPrograms()
-    const cost = ns.singularity.getDarkwebProgramCost
-    programs = programs.filter((prog) => !ns.fileExists(prog, "home"))
-    // sort from highest to lowest since pop takes from the back
-    programs.sort((a, b) => cost(b) - cost(a))
-    let prog: string | undefined = programs.pop()
-    while (prog !== undefined) {
-      if (!ns.singularity.purchaseProgram(prog)) {
-        break
-      }
-      prog = programs.pop()
-    }
-  } else {
-    ns.singularity.purchaseTor()
-  }
-
-  const factionServers = ["CSEC", "avmnite-02h", "I.I.I.I", "run4theh111z"]
-  const currentServer = ns.getHostname()
-  const invites = ns.singularity.checkFactionInvitations()
-  for (const hostname of factionServers) {
-    const serv = ns.getServer(hostname)
-    // attempt to join these key factions
-    const faction = serv.organizationName
-    if (invites.find((f) => f === faction)) {
-      ns.singularity.joinFaction(faction)
-    }
-    // controller does not handle getting admin rights
-    if (serv.backdoorInstalled || !serv.hasAdminRights) {
-      continue
-    }
-    goto(ns, hostname)
-    await ns.singularity.installBackdoor()
-    goto(ns, currentServer)
-  }
+  await execWait(ns, "/bin/controller/getDarkweb.js", 1)
+  await execWait(ns, "/bin/controller/joinFactions.js", 1)
 
   // Find the highest value option that we can.
   let options: MoneyOption[] = []
